@@ -15,7 +15,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .action, target: self, action: #selector(shareTapped))
         
     }
     @IBAction func loadImage(_ sender: Any) {
@@ -90,5 +90,29 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         viewImage.image = img
     }
     
+    @objc func shareTapped() {
+        guard let image = viewImage.image?.jpegData(compressionQuality: 0.8) else {
+            print("No image found")
+            return
+        }
+        let imageName = "image from Lessons-90.jpg"
+        // Создайте временный файл
+        let temporaryDirectory = FileManager.default.temporaryDirectory
+        let fileURL = temporaryDirectory.appendingPathComponent(imageName)
+        
+        do {
+            // Запишите данные изображения в файл
+            try image.write(to: fileURL)
+            
+            // Передаем файл вместо данных изображения
+            let itemsToShare: [Any] = [fileURL]
+            
+            let vc = UIActivityViewController(activityItems: itemsToShare, applicationActivities: nil)
+            vc.popoverPresentationController?.barButtonItem = navigationItem.rightBarButtonItem
+            present(vc, animated: true)
+        } catch {
+            print("Error saving image: \(error)")
+        }
+    }
 }
 
