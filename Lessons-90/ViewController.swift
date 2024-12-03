@@ -140,7 +140,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     }
     
     @objc func clearImage() {
-        
+        print("Tap Cancel")
         viewImage.image = nil // Убираем изображение из UIImageView
     }
 }
