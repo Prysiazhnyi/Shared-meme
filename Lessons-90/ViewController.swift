@@ -15,6 +15,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        title = "Your image!"
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .action, target: self, action: #selector(shareTapped))
         
     }
@@ -27,14 +28,10 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     }
     
     @IBAction func topText(_ sender: Any) {
-        textCoreGraphics(x: 0, y: 20)
+        textCoreGraphics(x: 10, y: 20, isBottomAligned: false)
     }
     @IBAction func bottomText(_ sender: Any) {
-        guard let originalImage = viewImage.image else {
-            print("bottomText - No image found")
-            return
-        }
-        textCoreGraphics(x: 0, y: originalImage.size.height - 300)
+        textCoreGraphics(x: 10, y: 20, isBottomAligned: true)
     }
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
@@ -51,44 +48,70 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         viewImage.image = image
     }
     
-    func textCoreGraphics(x: CGFloat, y: CGFloat) {
+    func textCoreGraphics(x: CGFloat, y: CGFloat, isBottomAligned: Bool) {
         guard let originalImage = viewImage.image else {
-            print("topText - No image found")
+            print("No image found")
             return
         }
         
-        let renderer = UIGraphicsImageRenderer(size: originalImage.size)
+        // Создаем алерт для ввода текста
+        let ac = UIAlertController(title: "Enter your text", message: nil, preferredStyle: .alert)
+        ac.addTextField()
         
-        let img = renderer.image { ctx in
-            // Рисуем оригинальное изображение
-            originalImage.draw(at: .zero)
+        // Действие при подтверждении
+        let submitAction = UIAlertAction(title: "OK", style: .default) { [weak self, weak ac] _ in
+            guard let text = ac?.textFields?[0].text, !text.isEmpty else { return }
             
-            // Текст и атрибуты
-            let text = "From Storm Viewer\n(задание из project-27\n Core Graphics)"
-            let attributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont(name: "Chalkduster", size: 60) ?? UIFont.boldSystemFont(ofSize: 60),
-                .foregroundColor: UIColor.red,
-                .paragraphStyle: {
-                    let style = NSMutableParagraphStyle()
-                    style.alignment = .center
-                    return style
-                }()
-            ]
+            let renderer = UIGraphicsImageRenderer(size: originalImage.size)
             
-            // Рассчитываем прямоугольник для текста
-            let textRect = CGRect(
-                x: x,
-                y: y, // отступ от верхней границы изображения
-                width: originalImage.size.width,
-                height: 300 // Высота под текст
-            )
+            let img = renderer.image { ctx in
+                // Рисуем оригинальное изображение
+                originalImage.draw(at: .zero)
+                
+                // Атрибуты текста
+                let attributes: [NSAttributedString.Key: Any] = [
+                    .font: UIFont(name: "Chalkduster", size: 60) ?? UIFont.boldSystemFont(ofSize: 60),
+                    .foregroundColor: UIColor.red,
+                    .paragraphStyle: {
+                        let style = NSMutableParagraphStyle()
+                        style.alignment = .center
+                        return style
+                    }()
+                ]
+                
+                // Рассчитываем размер текста
+                let maxSize = CGSize(width: originalImage.size.width - 20, height: .greatestFiniteMagnitude)
+                let textBounds = text.boundingRect(
+                    with: maxSize,
+                    options: .usesLineFragmentOrigin,
+                    attributes: attributes,
+                    context: nil
+                )
+                
+                // Рассчитываем начальную позицию для текста
+                let textHeight = textBounds.height
+                let textY: CGFloat = isBottomAligned
+                ? originalImage.size.height - textHeight - y // Текст снизу
+                : y // Текст сверху
+                
+                let textRect = CGRect(
+                    x: x,
+                    y: textY,
+                    width: originalImage.size.width - 20, // Оставляем отступы
+                    height: textHeight
+                )
+                
+                // Рисуем текст
+                text.draw(with: textRect, options: .usesLineFragmentOrigin, attributes: attributes, context: nil)
+            }
             
-            // Рисуем текст в прямоугольнике
-            text.draw(with: textRect, options: .usesLineFragmentOrigin, attributes: attributes, context: nil)
+            // Обновляем изображение
+            self?.viewImage.image = img
         }
-        
-        viewImage.image = img
+        ac.addAction(submitAction)
+        present(ac, animated: true)
     }
+    
     
     @objc func shareTapped() {
         guard let image = viewImage.image?.jpegData(compressionQuality: 0.8) else {
