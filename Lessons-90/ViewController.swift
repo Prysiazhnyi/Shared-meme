@@ -16,6 +16,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Your image!"
+        navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(clearImage))
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .action, target: self, action: #selector(shareTapped))
         
     }
@@ -136,6 +137,11 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         } catch {
             print("Error saving image: \(error)")
         }
+    }
+    
+    @objc func clearImage() {
+        
+        viewImage.image = nil // Убираем изображение из UIImageView
     }
 }
 
